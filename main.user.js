@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         外专业选课助手
 // @namespace    http://zsh2517.com/
-// @version      2.1
+// @version      2.2
 // @description  通过预设你已经有了的课程，从选课列表中过滤时间冲突的内容。同时支持自定义一些偏好选项
 // @author       zsh2517
 // @match        http://jwts.hit.edu.cn/xsxk/queryXsxkList
@@ -156,7 +156,7 @@
             data.time = text.match(/\[.*?\]星期.第(\d+(,){0,1})+节◇.*?(?=[◇,])/g);
             var temp = [];
             console.log(data.time);
-            debugger;
+            // debugger;
             if (data.time !== null) {
                 data.time.forEach(ele => {
                     // console.log(typeof (ele));
