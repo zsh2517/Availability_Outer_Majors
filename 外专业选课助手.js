@@ -1,22 +1,24 @@
 // ==UserScript==
-// @name         Purify SelectCourse
+// @name         外专业选课助手
 // @namespace    http://zsh2517.com/
-// @version      1.0
+// @version      2.0
 // @description  通过预设你已经有了的课程，从选课列表中过滤时间冲突的内容。同时支持自定义一些偏好选项
 // @author       zsh2517
 // @match        http://jwts.hit.edu.cn/xsxk/queryXsxkList
-// @grant        none
+// @match        http://jwts.hit.edu.cn/xsxk/queryXsxkList?*
+// @match        http://jwts.hit.edu.cn/kbcx/queryGrkb
+// @grant        GM_setValue
+// @grant        GM_getValue
 // ==/UserScript==
 
 (function () {
     'use strict';
-
+    debugger;
     const refuse_type = ["opacity", "displaynone"][0]; // 选择如何隐藏
     // 0 是透明化按钮，1 是不显示。一般情况下建议透明，而非彻底不显示该课程。
 
     // 下面一行插入你由另一个脚本输出得到的课程表。是段 json，直接填入 引号内
     var already_class = '';
-    already_class = JSON.parse(already_class);
 
     const refuse = {
         teacher: [], // 如果不想选某个老师的课，添加到这里 比如 ["张三", "李四"]
@@ -29,31 +31,98 @@
     };
 
 
-    var table = [];
-    for (var i = 0; i <= 20; i++) {
-        var temp1 = [];
-        for (var j = 0; j <= 7; j++) {
-            var temp2 = [];
-            for (var k = 0; k <= 12; k++) {
-                temp2.push("");
-            }
-            temp1.push(temp2);
-        }
-        table.push(temp1);
-    }
-
-    already_class.forEach(cls => {
-        console.log(cls);
-        cls.week.forEach(week => {
-            table[week][cls.weekday][cls.time[0]] = `${cls.name} - ${cls.teacher}`;
-            table[week][cls.weekday][cls.time[1]] = `${cls.name} - ${cls.teacher}`;
-        })
-    })
-
-    console.log(table);
 
     var courseType = document.querySelector("body > div.Contentbox > div > div.address > a").innerHTML;
+    if (courseType === "个人课表查询") {
+        (function () {
+            var tb = document.querySelector("body > div.Contentbox > div > div.xfyq_area.mt10 > div.xfyq_con > table > tbody");
+            console.log(tb);
+            var getclass = function (day, cls) {
+                return tb.children[cls].children[day + 1];
+            }
+            var classlist = [];
+            for (var day = 1; day <= 7; day++) {
+                for (var cls = 1; cls <= 6; cls++) {
+                    var ele = getclass(day, cls);
+                    // console.log(`[${ele.innerText}]`);
+                    if (ele.innerText.replace(" ", "") === "") { // the space is C2 A0 !!
+
+                    } else {
+                        var data = {}
+                        data.name = ele.children[0].previousSibling.wholeText;
+                        var text = ele.children[0].nextSibling.wholeText;
+                        text = text.split("[");
+                        data.teacher = text[0];
+                        text = text[1].split("]");
+                        data.week = text[0];
+                        data.place = text[1].replace("周", "");
+                        var temp = [];
+                        data.week.split("，").forEach(ele => {
+                            if (ele.indexOf("-") != -1) {
+                                ele = ele.split("-");
+                                for (var i = Number(ele[0]); i <= Number(ele[1]); i++) {
+                                    temp.push(i);
+                                }
+                            } else {
+                                temp.push(Number(ele));
+                            }
+                        })
+                        data.week = temp;
+                        data.weekday = day;
+                        data.time = [cls * 2 - 1, cls * 2];
+                        console.log(data);
+                        classlist.push(data);
+                    }
+                }
+            }
+            // console.log(JSON.stringify(classlist));
+            GM_setValue("schedule", classlist);
+            console.log("课表保存成功");
+            var newele = document.querySelector("#queryform").appendChild(document.createElement("div"));
+            newele.innerText = `外专业选课助手：课表保存成功`;
+            newele.style["font-size"] = `large`;
+            newele.style["color"] = `red`;
+            newele.style["text-align"] = `middle`;
+
+            console.log(GM_getValue("schedule", classlist));
+        })();
+    }
+
     if (courseType === "外专业课程") {
+        // already_class = JSON.parse(already_class);
+        already_class = GM_getValue("schedule");
+        if(already_class === undefined) {
+            console.log("无预设课表");
+            var newele = document.querySelector(".search").appendChild(document.createElement("div"));
+            newele.innerText = `外专业选课助手：无预设课表。请先打开课表界面进行导入（自动导入）`;
+            newele.style["font-size"] = `large`;
+            newele.style["color"] = `red`;
+            newele.style["text-align"] = `middle`;
+            return;
+        }
+        var table = [];
+        for (var i = 0; i <= 20; i++) {
+            var temp1 = [];
+            for (var j = 0; j <= 7; j++) {
+                var temp2 = [];
+                for (var k = 0; k <= 12; k++) {
+                    temp2.push("");
+                }
+                temp1.push(temp2);
+            }
+            table.push(temp1);
+        }
+    
+        already_class.forEach(cls => {
+            console.log(cls);
+            cls.week.forEach(week => {
+                table[week][cls.weekday][cls.time[0]] = `${cls.name} - ${cls.teacher}`;
+                table[week][cls.weekday][cls.time[1]] = `${cls.name} - ${cls.teacher}`;
+            })
+        })
+    
+        console.log(table);
+    
         var delete_courses = []
         for (var index = 2; index < 1 + document.querySelector("body > div.Contentbox > div > div.list > table > tbody").childNodes.length / 2; index++) {
             if (index == 21) {
@@ -177,7 +246,7 @@
             }
         }
         var newele = document.querySelector(".search").appendChild(document.createElement("div"));
-        newele.innerText = `本页面基于您设定的规则和已选课表，隐藏了 ${delete_courses.length} 个课程，分别为 ${delete_courses.join(" ")}`
+        newele.innerText = `外专业选课助手：本页面基于您设定的规则和已选课表，隐藏了 ${delete_courses.length} 个课程，分别为 ${delete_courses.join(" ")}`
         newele.style["font-size"] = `large`;
         newele.style["color"] = `red`;
         newele.style["text-align"] = `middle`;
