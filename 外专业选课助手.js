@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         外专业选课助手
 // @namespace    http://zsh2517.com/
-// @version      2.0
+// @version      2.1
 // @description  通过预设你已经有了的课程，从选课列表中过滤时间冲突的内容。同时支持自定义一些偏好选项
 // @author       zsh2517
 // @match        http://jwts.hit.edu.cn/xsxk/queryXsxkList
@@ -13,16 +13,12 @@
 
 (function () {
     'use strict';
-    debugger;
     const refuse_type = ["opacity", "displaynone"][0]; // 选择如何隐藏
     // 0 是透明化按钮，1 是不显示。一般情况下建议透明，而非彻底不显示该课程。
 
-    // 下面一行插入你由另一个脚本输出得到的课程表。是段 json，直接填入 引号内
-    var already_class = '';
-
     const refuse = {
         teacher: [], // 如果不想选某个老师的课，添加到这里 比如 ["张三", "李四"]
-        school: ["计算机科学与技术学院"], // 不包含这些学院的课程，比如 ["计算机科学与技术学院"]，这里可以排除自己的学院以及不想去的学院
+        school: [], // 不包含这些学院的课程，比如 ["计算机科学与技术学院"]，这里可以排除自己的学院以及不想去的学院
         // 后面四个没做
         name_in_class: [], // 不包含某些字符的课程，比如 ["原子", "代数", "函数"]
         week: [], // 如果不想选择有第几周的课，添加到这里 [1, 2, 17, 18, 19]
@@ -89,8 +85,7 @@
     }
 
     if (courseType === "外专业课程") {
-        // already_class = JSON.parse(already_class);
-        already_class = GM_getValue("schedule");
+        var already_class = GM_getValue("schedule");
         if(already_class === undefined) {
             console.log("无预设课表");
             var newele = document.querySelector(".search").appendChild(document.createElement("div"));
