@@ -162,7 +162,9 @@
                     // console.log(typeof (ele));
                     var glb = element;
                     ele = ele.split(separator);
-                    var 第几周 = ele[0].split("星期");
+                    var 第几周 = ele[0].split("星期"); 
+                    // 这里是因为实在不知道叫什么了...
+                    // 英语描述不出来完整意思。等到差不多了再该回去
                     var 周几 = 第几周[1].split("第");
                     // console.log(周几[1]);
                     var 第几节课 = 周几[1].match(/\d+/g);
